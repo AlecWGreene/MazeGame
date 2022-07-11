@@ -6,7 +6,7 @@
 
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
 
-#include "MazeOutlineCache.h"
+#include "MazeOutline.h"
 #include "TabWrapperBase.h"
 #include "MazeOutlineEditorTabWrappers.h"
 
@@ -46,8 +46,8 @@ public:
 public:
 
 	TSharedRef<FTabManager::FLayout> GenerateInterfaceLayout();
-	void SetupTabs(UMazeOutlineCache* Object);
-	void SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutlineCache* Object);
+	void SetupTabs(UMazeOutline* Object);
+	void SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object);
 	void HandleAssetChanged(const FPropertyChangedEvent& Event);
 	void ResertEditorInterfaceState();
 
@@ -58,7 +58,7 @@ public:
 
 	TSharedPtr<class FMazeOutlineEdMode> EdMode;
 
-	TWeakObjectPtr<UMazeOutlineCache> CurrentCache;
+	TWeakObjectPtr<UMazeOutline> CurrentOutline;
 
 	TArray<TSharedPtr<FTabWrapperBase>> TabCollection;
 

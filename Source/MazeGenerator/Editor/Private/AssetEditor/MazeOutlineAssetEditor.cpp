@@ -34,7 +34,8 @@ void FMazeOutlineAssetEditor::RegisterTabSpawners(const TSharedRef<class FTabMan
 	for (TSharedPtr<FTabWrapperBase> TabWrapper : TabCollection)
 	{
 		TabWrapper->TabColor = GetWorldCentricTabColorScale();
-		InTabManager->RegisterTabSpawner(*TabWrapper->UniqueName, FOnSpawnTab::CreateSP(TabWrapper.Get(), &FTabWrapperBase::HandleSpawn))
+		InTabManager->RegisterTabSpawner(*TabWrapper->UniqueName, 
+				FOnSpawnTab::CreateSP(TabWrapper.Get(), &FTabWrapperBase::HandleSpawn))
 			.SetDisplayName(FText::FromString(TabWrapper->DisplayName))
 			.SetGroup(WorkspaceMenuCategoryRef);
 	}
@@ -124,7 +125,7 @@ TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayou
 		);
 }
 
-void FMazeOutlineAssetEditor::SetupTabs(UMazeOutlineCache* Object)
+void FMazeOutlineAssetEditor::SetupTabs(UMazeOutline* Object)
 {
 	DefaultViewportTab = MakeShared<FTabWrapperBase>();
 
@@ -172,9 +173,9 @@ void FMazeOutlineAssetEditor::SetupTabs(UMazeOutlineCache* Object)
 	}
 }
 
-void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutlineCache* Object)
+void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object)
 {
-	CurrentCache = Object;
+	CurrentOutline = Object;
 	Object->SetFlags(RF_Transactional);
 
 	CreateEditorModeManager();

@@ -3,31 +3,31 @@
 #pragma once
 
 #include "Factories/Factory.h"
-#include "MazeOutlineCache.h"
+#include "MazeOutline.h"
 
-#include "MazeOutlineCacheFactory.generated.h"
+#include "MazeOutlineFactory.generated.h"
 
 UCLASS()
-class UMazeOutlineCacheFactory : public UFactory
+class UMazeOutlineFactory : public UFactory
 {
 	GENERATED_BODY()
 
 public:
 
-	UMazeOutlineCacheFactory()
+	UMazeOutlineFactory()
 	{
 		bCreateNew = true;
 		bEditAfterNew = true;
-		SupportedClass = UMazeOutlineCache::StaticClass();
+		SupportedClass = UMazeOutline::StaticClass();
 	}
 
 	virtual UObject* FactoryCreateNew(UClass* Class, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn) override
 	{
-		UMazeOutlineCache* Output = nullptr;
+		UMazeOutline* Output = nullptr;
 
 		if (Class == SupportedClass && (RF_Public & Flags) != 0)
 		{
-			Output = NewObject<UMazeOutlineCache>(InParent, Name, Flags);
+			Output = NewObject<UMazeOutline>(InParent, Name, Flags);
 		}
 
 		return Output;

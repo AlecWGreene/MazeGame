@@ -4,14 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "AssetTypeActions_Base.h"
-#include "MazeOutlineCache.h"
+#include "MazeOutline.h"
 
-struct FAssetTypeActions_MazeOutlineCache : FAssetTypeActions_Base
+struct FAssetTypeActions_MazeOutline : FAssetTypeActions_Base
 {
 public:
 	virtual FText GetName() const override
 	{
-		return NSLOCTEXT("AssetTypeActions", "FAssetTypeActions_MazeOutlineCache", "Maze Outline Cache");
+		return NSLOCTEXT("AssetTypeActions", "FAssetTypeActions_MazeOutline", "Maze Outline");
 	}
 
 	virtual FColor GetTypeColor() const override
@@ -26,7 +26,7 @@ public:
 
 	virtual UClass* GetSupportedClass() const override
 	{
-		return UMazeOutlineCache::StaticClass();
+		return UMazeOutline::StaticClass();
 	}
 
 	virtual void OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<IToolkitHost> ToolkitHost = TSharedPtr<IToolkitHost>()) override;
