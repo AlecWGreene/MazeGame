@@ -16,6 +16,20 @@ enum class EMazeStyle : uint8
 	Braid
 };
 
+/**
+ * Used for tracking radial directions while doing maze navigation
+ */
+UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class EMazeDirection : uint8
+{
+	None			= 0			UMETA(Hidden),
+	CW				= 1			UMETA(DisplayName = "Clockwise"),
+	Out				= 1 << 1	UMETA(DisplayName = "Outward"),
+	CCW				= 1 << 2	UMETA(DisplayName = "CounterClockwise"),
+	In				= 1 << 3	UMETA(DisplayName = "Inward")
+};
+ENUM_CLASS_FLAGS(EMazeDirection);
+
 /** 
  * Represents a position on the maze graph. 
  */
@@ -38,6 +52,12 @@ public:
 	/** Position is the index of the location within the ring, 0 is always along the positive x-axis "spoke" of the graph. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Position{ 0 };
+
+	/** Gets the index of the side within the n-gon ring. Between 0 and NumSides-1. */
+	int32 GetSideNumber() const;
+
+	/** Gets the position of the node within the side. Between 0 and Ring-1. */
+	int32 GetSidePosition() const;
 
 	/** Invalid static instance to use as bad returns. */
 	static FMazeLocation Invalid;
@@ -86,6 +106,13 @@ public:
 	/** Style to use when connecting nodes within this fragment. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EMazeStyle Style{ EMazeStyle::None };
+
+	/** Which directions should this fragment connect to other fragments? */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Bitmask, BitmaskEnum=EMazeDirection))
+	uint8 Connections{ 
+		// Not an efficient way of doing this, but I think it's cute so it's staying
+		static_cast<uint8>(EMazeDirection::CW | EMazeDirection::In | EMazeDirection::CW | EMazeDirection::Out)
+	};
 
 	/** Segments defining the boundaries of the fragment. */
 	TArray<FMazeLineSegment> Boundaries;

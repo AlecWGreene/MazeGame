@@ -34,6 +34,7 @@ void FMazeOutlineAssetEditor::RegisterTabSpawners(const TSharedRef<class FTabMan
 	for (TSharedPtr<FTabWrapperBase> TabWrapper : TabCollection)
 	{
 		TabWrapper->TabColor = GetWorldCentricTabColorScale();
+		// TODO(agreene): Fix ensure triggering on this call
 		InTabManager->RegisterTabSpawner(*TabWrapper->UniqueName, 
 				FOnSpawnTab::CreateSP(TabWrapper.Get(), &FTabWrapperBase::HandleSpawn))
 			.SetDisplayName(FText::FromString(TabWrapper->DisplayName))
@@ -53,7 +54,7 @@ bool FMazeOutlineAssetEditor::IsPrimaryEditor() const
 
 FName FMazeOutlineAssetEditor::GetToolkitFName() const
 {
-	return FName(TEXT("MazeOutlineCacheEditor"));
+	return FName(TEXT("MazeOutlineEditor"));
 }
 
 FText FMazeOutlineAssetEditor::GetToolkitName() const
@@ -117,8 +118,6 @@ TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayou
 				(
 					FTabManager::NewStack()
 					->SetSizeCoefficient(0.33)
-					->AddTab(*LayerDetailsTab->UniqueName, ETabState::OpenedTab)
-					->AddTab(*SectionDetailsTab->UniqueName, ETabState::OpenedTab)
 					->AddTab(*FragmentDetailsTab->UniqueName, ETabState::OpenedTab)
 				)
 			)
@@ -132,12 +131,6 @@ void FMazeOutlineAssetEditor::SetupTabs(UMazeOutline* Object)
 	PreviewSettingsTab = MakeShared<FPreviewSettingsTabWrapper>();
 	OutlineSettingsTab = MakeShared<FOutlineSettingsTabWrapper>();
 
-	LayerDetailsTab = MakeShared<FStructDetailsTabWrapper>();
-	LayerDetailsTab->DisplayName = TEXT("Layer Details");
-
-	SectionDetailsTab = MakeShared<FStructDetailsTabWrapper>();
-	SectionDetailsTab->DisplayName = TEXT("Section Details");
-
 	FragmentDetailsTab = MakeShared<FStructDetailsTabWrapper>();
 	FragmentDetailsTab->DisplayName = TEXT("Fragment Details");
 
@@ -145,9 +138,7 @@ void FMazeOutlineAssetEditor::SetupTabs(UMazeOutline* Object)
 	TabCollection = { 
 		DefaultViewportTab, 
 		PreviewSettingsTab, 
-		OutlineSettingsTab, 
-		LayerDetailsTab, 
-		SectionDetailsTab, 
+		OutlineSettingsTab,  
 		FragmentDetailsTab 
 	};
 
@@ -180,7 +171,7 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 
 	CreateEditorModeManager();
 
-	FName EditorModeId = FName(TEXT("MazeOutlineCache MazeOutlineEdMode"));
+	FName EditorModeId = FName(TEXT("MazeOutline MazeOutlineEdMode"));
 	FString EditorModeText = FString(TEXT("Maze Outline Editor"));
 	if (!FEditorModeRegistry::Get().GetFactoryMap().Contains(EditorModeId))
 	{
@@ -190,6 +181,16 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 	SetupTabs(Object);
 
 	FWorkflowCentricApplication::InitAssetEditor(Mode, Host, GetToolkitFName(), GenerateInterfaceLayout(), true, true, Object);
+
+	// TODO(agreene): Create pipeline for defaulting/changing this data pointing
+	FragmentDetailsTab->SetData(
+		FMazeFragmentOutline::StaticStruct(),
+		&Object->Fragments[0],
+		[](const FPropertyChangedEvent& Event)
+		{
+			// Mark Cached object dirty on ed mode and call HandlePropertyChanged on the ed mode
+			UE_LOG(LogTemp, Display, TEXT("%s changed!"), *Event.GetPropertyName().ToString());
+		});
 }
 
 void FMazeOutlineAssetEditor::HandleAssetChanged(const FPropertyChangedEvent& Event)

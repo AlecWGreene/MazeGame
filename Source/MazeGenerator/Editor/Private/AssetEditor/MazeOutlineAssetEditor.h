@@ -70,7 +70,5 @@ public:
 	TSharedPtr<FPreviewSettingsTabWrapper> PreviewSettingsTab;
 	TSharedPtr<FOutlineSettingsTabWrapper> OutlineSettingsTab;
 	
-	TSharedPtr<FStructDetailsTabWrapper> LayerDetailsTab;
-	TSharedPtr<FStructDetailsTabWrapper> SectionDetailsTab;
 	TSharedPtr<FStructDetailsTabWrapper> FragmentDetailsTab;
 };

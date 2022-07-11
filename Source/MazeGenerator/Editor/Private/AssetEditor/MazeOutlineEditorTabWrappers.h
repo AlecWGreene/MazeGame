@@ -38,8 +38,12 @@ struct FStructDetailsTabWrapper : public FTabWrapperBase
 {
 	FStructDetailsTabWrapper();
 
+	/** Links this tab to a piece of data so that the user can edit it. */
+	void SetData(UStruct* StructType, void* StructData, TFunction<void(const FPropertyChangedEvent&)> OnDataChanged);
+
 	virtual void Initialize_Internal() override;
 	virtual TSharedRef<SWidget> GenerateTabContent() override;
 
 	TSharedPtr<IStructureDetailsView> DetailsView{ nullptr };
+	FDelegateHandle OnDataChangedHandle;
 };

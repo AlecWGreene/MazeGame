@@ -246,6 +246,29 @@ FStructDetailsTabWrapper::FStructDetailsTabWrapper()
 	DisplayName = TEXT("Struct Details");
 }
 
+void FStructDetailsTabWrapper::SetData(UStruct* StructType, void* StructData, TFunction<void(const FPropertyChangedEvent&)> OnDataChanged)
+{
+	if (!DetailsView)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[FStructDetailsTabWrapper::SetData] DetailsView was null on tab %s"), *UniqueName)
+		return;
+	}
+
+	TSharedPtr<FStructOnScope> StructOnScope = MakeShared<FStructOnScope>(StructType, (uint8*)StructData);
+	DetailsView->SetStructureData(StructOnScope);
+	DetailsView->GetOnFinishedChangingPropertiesDelegate().Remove(OnDataChangedHandle);
+
+	if (StructOnScope != nullptr)
+	{
+		OnDataChangedHandle = DetailsView->GetOnFinishedChangingPropertiesDelegate().AddLambda(OnDataChanged);
+	}
+	else
+	{
+		DetailsView->GetOnFinishedChangingPropertiesDelegate().Remove(OnDataChangedHandle);
+		OnDataChangedHandle = FDelegateHandle();
+	}
+}
+
 void FStructDetailsTabWrapper::Initialize_Internal()
 {
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditorModule");

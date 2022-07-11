@@ -28,6 +28,7 @@ public:
 		if (Class == SupportedClass && (RF_Public & Flags) != 0)
 		{
 			Output = NewObject<UMazeOutline>(InParent, Name, Flags);
+			Output->Fragments.Add(FMazeFragmentOutline());
 		}
 
 		return Output;
