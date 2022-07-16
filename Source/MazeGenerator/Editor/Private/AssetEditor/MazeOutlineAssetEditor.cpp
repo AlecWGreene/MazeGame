@@ -8,7 +8,7 @@
 
 FMazeOutlineAssetEditor::FMazeOutlineAssetEditor()
 {
-	WorkspaceMenuName = TEXT("MOCEd");
+	WorkspaceMenuName = TEXT("MOED");
 }
 
 FMazeOutlineAssetEditor::~FMazeOutlineAssetEditor()
@@ -34,7 +34,6 @@ void FMazeOutlineAssetEditor::RegisterTabSpawners(const TSharedRef<class FTabMan
 	for (TSharedPtr<FTabWrapperBase> TabWrapper : TabCollection)
 	{
 		TabWrapper->TabColor = GetWorldCentricTabColorScale();
-		// TODO(agreene): Fix ensure triggering on this call
 		InTabManager->RegisterTabSpawner(*TabWrapper->UniqueName, 
 				FOnSpawnTab::CreateSP(TabWrapper.Get(), &FTabWrapperBase::HandleSpawn))
 			.SetDisplayName(FText::FromString(TabWrapper->DisplayName))
@@ -64,7 +63,7 @@ FText FMazeOutlineAssetEditor::GetToolkitName() const
 
 FText FMazeOutlineAssetEditor::GetBaseToolkitName() const
 {
-	return FText::FromString(TEXT("MOCEd"));
+	return FText::FromString(TEXT("MOED"));
 }
 
 FText FMazeOutlineAssetEditor::GetToolkitToolTipText() const
@@ -74,7 +73,7 @@ FText FMazeOutlineAssetEditor::GetToolkitToolTipText() const
 
 FString FMazeOutlineAssetEditor::GetWorldCentricTabPrefix() const
 {
-	return FString(TEXT("MOCEd"));
+	return FString(TEXT("MOED"));
 }
 
 FLinearColor FMazeOutlineAssetEditor::GetWorldCentricTabColorScale() const
@@ -94,7 +93,7 @@ void FMazeOutlineAssetEditor::PostRedo(bool Success)
 
 TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayout()
 {
-	return FTabManager::NewLayout("Maze_Outline_Editor_v1_1")
+	return FTabManager::NewLayout("Maze_Outline_Editor_v1_3")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
@@ -166,6 +165,14 @@ void FMazeOutlineAssetEditor::SetupTabs(UMazeOutline* Object)
 
 void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object)
 {
+	if (!Object)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[FMazeOutlineAssetEditor::SetupEditor] Object was null"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Display, TEXT("[FMazeOutlineAssetEditor::SetupEditor] %s"), *Object->GetFName().ToString());
+
 	CurrentOutline = Object;
 	Object->SetFlags(RF_Transactional);
 
@@ -178,19 +185,16 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 		FEditorModeRegistry::Get().RegisterMode<FMazeOutlineEdMode>(EditorModeId, FText::FromString(EditorModeText), FSlateIcon(), false);
 	}
 
+	GetEditorModeManager().ActivateMode(EditorModeId, true);
+
+	EdMode = MakeShareable(GetEditorModeManager().GetActiveModeTyped<FMazeOutlineEdMode>(EditorModeId));
+	EdMode->Editor = SharedThis(this);
+
 	SetupTabs(Object);
 
 	FWorkflowCentricApplication::InitAssetEditor(Mode, Host, GetToolkitFName(), GenerateInterfaceLayout(), true, true, Object);
 
-	// TODO(agreene): Create pipeline for defaulting/changing this data pointing
-	FragmentDetailsTab->SetData(
-		FMazeFragmentOutline::StaticStruct(),
-		&Object->Fragments[0],
-		[](const FPropertyChangedEvent& Event)
-		{
-			// Mark Cached object dirty on ed mode and call HandlePropertyChanged on the ed mode
-			UE_LOG(LogTemp, Display, TEXT("%s changed!"), *Event.GetPropertyName().ToString());
-		});
+	HandleAssetChanged(FPropertyChangedEvent(nullptr));
 }
 
 void FMazeOutlineAssetEditor::HandleAssetChanged(const FPropertyChangedEvent& Event)

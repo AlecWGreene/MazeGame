@@ -1,6 +1,7 @@
 // Copyright Alec Greene 2022. All Rights Reserved.
 
 #include "MazeOutlineEdMode.h"
+#include "MazeOutlineAssetEditor.h"
 
 FMazeOutlineEdMode::~FMazeOutlineEdMode()
 {
@@ -40,4 +41,26 @@ bool FMazeOutlineEdMode::HandleClick(FEditorViewportClient* ViewportClient, HHit
 {
 	UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineEdMode::HandleClick] Not implemented"));
 	return false;
+}
+
+void FMazeOutlineEdMode::UpdateFragmentDetailsView(int32 Index, TSharedPtr<FStructDetailsTabWrapper> FragmentTab)
+{
+	if (Editor.IsValid() && FragmentTab.IsValid())
+	{
+		UMazeOutline* Outline = Editor.Pin()->CurrentOutline.Get();
+		if (Outline)
+		{
+			if (Outline->Fragments.IsValidIndex(Index))
+			{
+				FragmentTab->SetData(
+					FMazeFragmentOutline::StaticStruct(),
+					&Outline->Fragments[Index],
+					[](const FPropertyChangedEvent& Event)
+					{
+						// Mark Cached object dirty on ed mode and call HandlePropertyChanged on the ed mode
+						UE_LOG(LogTemp, Display, TEXT("%s changed!"), *Event.GetPropertyName().ToString());
+					});
+			}
+		}
+	}
 }

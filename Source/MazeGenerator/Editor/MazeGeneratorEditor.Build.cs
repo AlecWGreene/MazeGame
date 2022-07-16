@@ -36,7 +36,8 @@ public class MazeGeneratorEditor : ModuleRules
 				"SlateCore",
 				"AssetRegistry",
 				"AssetTools",
-				"RenderCore"
+				"RenderCore",
+				"PropertyEditor"
 			}
 			);
 

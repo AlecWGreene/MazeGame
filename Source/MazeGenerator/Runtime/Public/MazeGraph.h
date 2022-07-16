@@ -57,6 +57,8 @@ public:
 	FMazeGraph();
 	FMazeGraph(uint8 InNumRings, uint8 InNumSides);
 	
+	bool Initialize(uint8 InNumRings, uint8 InNumSides);
+
 	//---------- Maze Graph Getters/Setters ----------//
 public:
 
@@ -92,8 +94,12 @@ public:
 
 protected:
 
-	/** Sets the nodes at locations A and B to either be neighbors or not depending on bNewRelationShip. */
-	bool SetNodesNeighbors(const FMazeLocation& LocationA, const FMazeLocation& LocationB, bool bNewRelationShip);
+	FMazeGraphNode* GetNode(const FMazeLocation& Location);
+
+	const FMazeGraphNode* GetNode(const FMazeLocation& Location) const;
+
+	/** Sets the nodes at locations A and B to be neighbors. */
+	bool SetNodesNeighbors(const FMazeLocation& LocationA, const FMazeLocation& LocationB);
 
 	//---------- Instance Variables ----------//
 protected:

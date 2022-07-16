@@ -5,7 +5,7 @@
 
 FPreviewSettingsTabWrapper::FPreviewSettingsTabWrapper()
 {
-	UniqueName = TEXT("MOCEd_PreviewSettings_Tab");
+	UniqueName = TEXT("MOED_PreviewSettings_Tab");
 	DisplayName = TEXT("Preview Settings");
 }
 
@@ -226,7 +226,7 @@ FReply FPreviewSettingsTabWrapper::HandlePreviewActionButtonClicked()
 
 FOutlineSettingsTabWrapper::FOutlineSettingsTabWrapper()
 {
-	UniqueName = TEXT("MOCEd_OutlineSettings_Tab");
+	UniqueName = TEXT("MOED_OutlineSettings_Tab");
 	DisplayName = TEXT("Outline Settings");
 }
 
@@ -242,7 +242,7 @@ TSharedRef<SWidget> FOutlineSettingsTabWrapper::GenerateTabContent()
 
 FStructDetailsTabWrapper::FStructDetailsTabWrapper()
 {
-	UniqueName = TEXT("MOCEd_StructDetails_Tab");
+	UniqueName = TEXT("MOED_StructDetails_Tab");
 	DisplayName = TEXT("Struct Details");
 }
 
@@ -271,7 +271,8 @@ void FStructDetailsTabWrapper::SetData(UStruct* StructType, void* StructData, TF
 
 void FStructDetailsTabWrapper::Initialize_Internal()
 {
-	FPropertyEditorModule& PropertyEditorModule = FModuleManager::LoadModuleChecked<FPropertyEditorModule>("PropertyEditorModule");
+	// TODO(agreene): Fix issue where module isn't loading in time
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	FDetailsViewArgs DetailsViewArgs;
 	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;

@@ -59,8 +59,16 @@ public:
 	/** Gets the position of the node within the side. Between 0 and Ring-1. */
 	int32 GetSidePosition() const;
 
+	/** Debug method for displaying locations. */
+	FString ToString() const;
+
 	/** Invalid static instance to use as bad returns. */
 	static FMazeLocation Invalid;
+
+	bool operator==(const FMazeLocation& Other) const
+	{
+		return Ring == Other.Ring && Position == Other.Position;
+	}
 };
 
 /** 

@@ -5,7 +5,7 @@
 
 FTabWrapperBase::FTabWrapperBase()
 {
-	UniqueName = TEXT("MOCEd_Base");
+	UniqueName = TEXT("MOED_Base");
 	DisplayName = TEXT("DEFAULT");
 }
 

@@ -3,6 +3,8 @@
 #pragma once
 
 #include "EdMode.h"
+#include "MazeOutline.h"
+#include "MazeOutlineEditorTabWrappers.h"
 
 class FMazeOutlineEdMode : public FEdMode
 {
@@ -23,4 +25,12 @@ public:
 	virtual void Render(const FSceneView* SceneView, FViewport* Viewport, FPrimitiveDrawInterface* PDI) override;
 
 	virtual bool HandleClick(FEditorViewportClient* ViewportClient, HHitProxy* HitProxy, const FViewportClick& ClickData) override;
+
+public:
+
+	void UpdateFragmentDetailsView(int32 Index, TSharedPtr<FStructDetailsTabWrapper> FragmentTab);
+
+public:
+
+	TWeakPtr<FMazeOutlineAssetEditor> Editor;
 };
