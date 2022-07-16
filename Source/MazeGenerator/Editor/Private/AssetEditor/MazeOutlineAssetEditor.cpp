@@ -232,7 +232,7 @@ bool FMazeOutlineAssetEditor::ValidateGraph()
 			for (int32 PositionIndex = 0; PositionIndex < RingIndex * PreviewGraph.GetNumSides(); ++PositionIndex)
 			{
 				FMazeLocation NodeLocation(RingIndex, PositionIndex);
-				UE_LOG(LogTemp, Display, TEXT("\tNode: %d"), *NodeLocation.ToString());
+				UE_LOG(LogTemp, Display, TEXT("\tNode: %s"), *NodeLocation.ToString());
 
 				FString NeighborString = FString::Printf(TEXT("\t\tNeighbors: "));
 				NeighborString += FString::JoinBy(
