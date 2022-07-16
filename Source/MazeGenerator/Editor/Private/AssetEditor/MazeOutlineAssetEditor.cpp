@@ -192,6 +192,9 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 
 	SetupTabs(Object);
 
+	PreviewGraph = FMazeGraph(5,6);
+	ValidateGraph();
+
 	FWorkflowCentricApplication::InitAssetEditor(Mode, Host, GetToolkitFName(), GenerateInterfaceLayout(), true, true, Object);
 
 	HandleAssetChanged(FPropertyChangedEvent(nullptr));
@@ -205,4 +208,46 @@ void FMazeOutlineAssetEditor::HandleAssetChanged(const FPropertyChangedEvent& Ev
 void FMazeOutlineAssetEditor::ResertEditorInterfaceState()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineAssetEditor::ResertEditorInterfaceState] Not implemented"));
+}
+
+bool FMazeOutlineAssetEditor::ValidateGraph()
+{
+	bool bOutput = true;
+
+	UE_LOG(LogTemp, Display, TEXT("=============== FMazeOutlineAssetEditor::ValidateGraph ==============="));
+	for (int32 RingIndex = 0; RingIndex <= PreviewGraph.GetNumRings(); ++RingIndex)
+	{
+		if (RingIndex == 0)
+		{
+			UE_LOG(LogTemp, Display, TEXT("\tOrigin Neighbors"));
+			for (const FMazeLocation& Location : PreviewGraph.GetNodeNeighbors(FMazeLocation(0, 0)))
+			{
+				UE_LOG(LogTemp, Display, TEXT("\t%s"), *Location.ToString());
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Display, TEXT("Ring %d"), RingIndex);
+
+			for (int32 PositionIndex = 0; PositionIndex < RingIndex * PreviewGraph.GetNumSides(); ++PositionIndex)
+			{
+				FMazeLocation NodeLocation(RingIndex, PositionIndex);
+				UE_LOG(LogTemp, Display, TEXT("\tNode: %d"), *NodeLocation.ToString());
+
+				FString NeighborString = FString::Printf(TEXT("\t\tNeighbors: "));
+				NeighborString += FString::JoinBy(
+					PreviewGraph.GetNodeNeighbors(NodeLocation),
+					TEXT(","),
+					[](FMazeLocation InLocation)
+					{
+						return InLocation.ToString();
+					}
+				);
+
+				UE_LOG(LogTemp, Display, TEXT("%s"), *NeighborString);
+			}
+		}
+	}
+
+	return bOutput;
 }

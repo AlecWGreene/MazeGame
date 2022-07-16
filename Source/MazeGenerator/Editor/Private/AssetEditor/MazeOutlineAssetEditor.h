@@ -10,6 +10,8 @@
 #include "TabWrapperBase.h"
 #include "MazeOutlineEditorTabWrappers.h"
 
+#include "MazeGraph.h"
+
 struct FMazeOutlineAssetEditor : public FWorkflowCentricApplication, public FSelfRegisteringEditorUndoClient
 {
 	//----- Constructor/Destructor -----//
@@ -51,6 +53,11 @@ public:
 	void HandleAssetChanged(const FPropertyChangedEvent& Event);
 	void ResertEditorInterfaceState();
 
+	//----- Utility Methods -----//
+public:
+
+	bool ValidateGraph();
+
 	//----- Instance Variables -----//
 public:
 
@@ -61,6 +68,8 @@ public:
 	TWeakObjectPtr<UMazeOutline> CurrentOutline;
 
 	TArray<TSharedPtr<FTabWrapperBase>> TabCollection;
+
+	FMazeGraph PreviewGraph;
 
 	//----- Default Tab Wrappers -----//
 public:

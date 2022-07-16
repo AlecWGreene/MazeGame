@@ -17,5 +17,5 @@ int32 FMazeLocation::GetSidePosition() const
 
 FString FMazeLocation::ToString() const
 {
-	return FString::Printf(TEXT("MazeLoc(%f,%f)"), Ring, Position);
+	return FString::Printf(TEXT("MazeLoc(%d,%d)"), Ring, Position);
 }

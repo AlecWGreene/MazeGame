@@ -57,7 +57,7 @@ public:
 	FMazeGraph();
 	FMazeGraph(uint8 InNumRings, uint8 InNumSides);
 	
-	bool Initialize(uint8 InNumRings, uint8 InNumSides);
+	void Initialize(uint8 InNumRings, uint8 InNumSides);
 
 	//---------- Maze Graph Getters/Setters ----------//
 public:
@@ -65,8 +65,6 @@ public:
 	uint8 GetNumRings();
 
 	uint8 GetNumSides();
-
-protected:
 
 	/** Sets the number of concentric rings which make up the graph. Should be greater than 1. */
 	void SetNumRings(uint8 InNumRings);
@@ -100,6 +98,15 @@ protected:
 
 	/** Sets the nodes at locations A and B to be neighbors. */
 	bool SetNodesNeighbors(const FMazeLocation& LocationA, const FMazeLocation& LocationB);
+
+	//---------- Utility Methods ----------//
+protected:
+
+	/** Adds a ring of nodes to the outside of the graph. */
+	void AddRing();
+
+	/** Removes the outer most ring of nodes from the graph. */
+	void RemoveRing();
 
 	//---------- Instance Variables ----------//
 protected:

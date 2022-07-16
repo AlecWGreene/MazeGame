@@ -9,118 +9,29 @@ FMazeGraph::FMazeGraph()
 
 FMazeGraph::FMazeGraph(uint8 InNumRings, uint8 InNumSides)
 {
-	SetNumRings(InNumRings);
-	SetNumSides(InNumSides);
+	Initialize(InNumRings, InNumSides);
 }
 
-bool FMazeGraph::Initialize(uint8 InNumRings, uint8 InNumSides)
+void FMazeGraph::Initialize(uint8 InNumRings, uint8 InNumSides)
 {
-	if (InNumRings > 1 && InNumSides > 3)
+	NodeRings.Empty();
+
+	TArray<FMazeGraphNode> RingNodes;
+	RingNodes.Reserve(1);
+	RingNodes.Add(FMazeGraphNode(0, 0));
+
+	// Origin node doesn't count as a ring towards NumRings
+	NumRings = NodeRings.Add(RingNodes);
+
+	if (InNumRings >= 1 && InNumSides >= 3)
 	{
-		SetNumRings(InNumRings);
 		SetNumSides(InNumSides);
-
-		// Initialize node rings
-		for (int32 RingIndex = 0; RingIndex < NumRings; ++RingIndex)
-		{
-			TArray<FMazeGraphNode> RingNodes;
-
-			// Origin is special case
-			if (RingIndex == 0)
-			{
-				RingNodes.Reserve(1);
-				RingNodes.Add(FMazeGraphNode(0, 0));
-				continue;
-			}
-
-			int32 RingSize = NumSides * RingIndex;
-			RingNodes.Reserve(RingSize);
-			for (int32 PositionIndex = 0; PositionIndex < RingSize; ++PositionIndex)
-			{
-				// Location of the node being added
-				FMazeLocation NewLocation = FMazeLocation(RingIndex, PositionIndex);
-				RingNodes.Add(FMazeGraphNode(NewLocation));
-
-				// Set neighbor of node before it in current ring
-				if (PositionIndex != 0)
-				{
-					SetNodesNeighbors(NewLocation, FMazeLocation(RingIndex, PositionIndex - 1));
-				}
-
-				// Set first and last nodes of the ring as neighbors
-				if (PositionIndex == RingSize - 1)
-				{
-					SetNodesNeighbors(NewLocation, FMazeLocation(RingIndex, 0));
-				}
-
-				// Set neighbors from previous ring
-				if (RingIndex == 1)
-				{
-					SetNodesNeighbors(NewLocation, FMazeLocation(0, 0));
-				}
-				else
-				{
-					int32 NewSideNumber = NewLocation.GetSideNumber();
-					int32 NewSidePosition = NewLocation.GetSidePosition();
-
-					// Handle corner nodes
-					if (NewSidePosition == 0)
-					{
-						SetNodesNeighbors(
-							NewLocation, 
-							FMazeLocation(
-								RingIndex - 1,
-								NewSideNumber * (RingIndex - 1)
-							)
-						);
-					}
-					else
-					{
-						// Handle case of a node which neighbors a previous corner node
-						if (NewSidePosition == RingIndex - 1)
-						{
-							int32 NextSideNumber = (NewSideNumber == NumSides - 1) ? 0 : (NewSideNumber + 1);
-							SetNodesNeighbors(
-								NewLocation,
-								FMazeLocation(
-									RingIndex - 1,
-									NextSideNumber * (RingIndex - 1)
-								)
-							);
-						}
-						else
-						{
-							SetNodesNeighbors(
-								NewLocation,
-								FMazeLocation(
-									RingIndex - 1,
-									NewSideNumber * (RingIndex - 1) + NewSidePosition
-								)
-							);
-						}
-						
-
-						SetNodesNeighbors(
-							NewLocation,
-							FMazeLocation(
-								RingIndex - 1,
-								NewSideNumber * (RingIndex - 1) + NewSidePosition - 1
-							)
-						);
-					}
-				}
-
-			} // End For(PositionIndex)
-
-			NodeRings.Add(RingNodes);
-		} // End For(RingIndex)
+		SetNumRings(InNumRings);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::Initialize] Could not initialize with %f rings and %f sides"), InNumRings, InNumSides);
+		UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::Initialize] Could not initialize with %d rings and %d sides"), InNumRings, InNumSides);
 	}
-
-	return false;
 }
 
 uint8 FMazeGraph::GetNumRings()
@@ -128,24 +39,50 @@ uint8 FMazeGraph::GetNumRings()
 	return NumRings;
 }
 
-void FMazeGraph::SetNumRings(uint8 InNumRings)
-{
-	NumRings = InNumRings;
-}
-
 uint8 FMazeGraph::GetNumSides()
 {
 	return NumSides;
 }
 
-void FMazeGraph::SetNumSides(uint8 InNumSides)
+void FMazeGraph::SetNumRings(uint8 InNumRings)
 {
-	if (InNumSides < 3)
+	if (InNumRings <= 1)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::SetNumSides] Cannot set number of sides to %f, is less than 3."), InNumSides);
+		UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::SetNumRings] Cannot set number of rings to %d, is less than 2."), InNumRings);
 		return;
 	}
 
+	// Early out if we're not changing anything
+	if (InNumRings == NumRings)
+	{
+		return;
+	}
+
+	int32 Direction = (InNumRings - NumRings > 0) ? 1 : -1;
+	for (int32 RingIndex = NumRings; RingIndex != InNumRings; RingIndex += Direction)
+	{
+		if (Direction == 1)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::SetNumRings] Adding ring at index %d"), RingIndex);
+			AddRing();
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::SetNumRings] Removing ring at index %d"), RingIndex);
+			RemoveRing();
+		}
+	}
+}
+
+void FMazeGraph::SetNumSides(uint8 InNumSides)
+{
+	if (InNumSides <= 3)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[FMazeGraph::SetNumSides] Cannot set number of sides to %d, is less than 3."), InNumSides);
+		return;
+	}
+
+	// TODO(agreene): Change the graph to add/remove sides
 	NumSides = InNumSides;
 }
 
@@ -299,4 +236,115 @@ bool FMazeGraph::SetNodesNeighbors(const FMazeLocation& LocationA, const FMazeLo
 	}
 
 	return false;
+}
+
+void FMazeGraph::AddRing()
+{
+	TArray<FMazeGraphNode> NewRing;
+	
+	int32 RingIndex = NumRings + 1;
+	int32 RingSize = NumSides * RingIndex;
+	
+	NewRing.Reserve(RingSize);
+	NumRings = NodeRings.Add(NewRing);
+	
+	// Once we have the ring initiailized and added, we insert our new nodes directly to the graph
+	TArray<FMazeGraphNode>& RingNodes = NodeRings[RingIndex];
+	for (int32 PositionIndex = 0; PositionIndex < RingSize; ++PositionIndex)
+	{
+		// Location of the node being added
+		FMazeLocation NewLocation = FMazeLocation(RingIndex, PositionIndex);
+		RingNodes.Add(FMazeGraphNode(NewLocation));
+	
+		// Set neighbor of node before it in current ring
+		if (PositionIndex != 0)
+		{
+			SetNodesNeighbors(NewLocation, FMazeLocation(RingIndex, PositionIndex - 1));
+		}
+
+		// Set first and last nodes of the ring as neighbors
+		if (PositionIndex == RingSize - 1)
+		{
+			SetNodesNeighbors(NewLocation, FMazeLocation(RingIndex, 0));
+		}
+
+		// Set neighbors from previous ring
+		if (RingIndex == 1)
+		{
+			SetNodesNeighbors(NewLocation, FMazeLocation(0, 0));
+		}
+		else
+		{
+			int32 NewSideNumber = NewLocation.GetSideNumber();
+			int32 NewSidePosition = NewLocation.GetSidePosition();
+
+			// Handle corner nodes
+			if (NewSidePosition == 0)
+			{
+				SetNodesNeighbors(
+					NewLocation,
+					FMazeLocation(
+						RingIndex - 1,
+						NewSideNumber * (RingIndex - 1)
+					)
+				);
+			}
+			else
+			{
+				// Handle case of a node which neighbors a previous corner node
+				if (NewSidePosition == RingIndex - 1)
+				{
+					int32 NextSideNumber = (NewSideNumber == NumSides - 1) ? 0 : (NewSideNumber + 1);
+					SetNodesNeighbors(
+						NewLocation,
+						FMazeLocation(
+							RingIndex - 1,
+							NextSideNumber * (RingIndex - 1)
+						)
+					);
+				}
+				else
+				{
+					SetNodesNeighbors(
+						NewLocation,
+						FMazeLocation(
+							RingIndex - 1,
+							NewSideNumber * (RingIndex - 1) + NewSidePosition
+						)
+					);
+				}
+
+
+				SetNodesNeighbors(
+					NewLocation,
+					FMazeLocation(
+						RingIndex - 1,
+						NewSideNumber * (RingIndex - 1) + NewSidePosition - 1
+					)
+				);
+			}
+		}
+	} // for (PositionIndex)
+}
+
+void FMazeGraph::RemoveRing()
+{
+	int32 RingIndex = NumRings;
+	int32 PrevRingIndex = RingIndex - 1;
+	int32 PrevRingSize = NumSides * PrevRingIndex;
+	for (int32 PositionIndex = 0; PositionIndex < PrevRingSize; ++PositionIndex)
+	{
+		FMazeGraphNode& Node = NodeRings[PrevRingIndex][PositionIndex];
+		for (const FMazeLocation& Location : Node.Neighbors)
+		{
+			// Remove neighbors to the ring we are going to remove
+			if (Location.Ring == RingIndex)
+			{
+				Node.Neighbors.Remove(Location);
+			}
+		}
+	}
+
+	NodeRings.RemoveAt(RingIndex);
+	NumRings = PrevRingIndex;
 }
