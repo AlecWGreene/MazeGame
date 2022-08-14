@@ -7,6 +7,7 @@
 #include "MazeOutlineEdMode.h"
 #include "SAssetEditorViewport.h"
 #include "AssetEditorViewportLayout.h"
+#include "IStructureDetailsView.h"
 
 struct FMazeOutlineAssetEditorTabs
 {
@@ -19,6 +20,11 @@ struct FMazeOutlineAssetEditorTabs
 FMazeOutlineAssetEditor::FMazeOutlineAssetEditor()
 {
 	WorkspaceMenuName = TEXT("MOED");
+}
+
+FMazeOutlineAssetEditor::~FMazeOutlineAssetEditor()
+{
+	FWorkflowCentricApplication::~FWorkflowCentricApplication();
 }
 
 void FMazeOutlineAssetEditor::CreateEditorModeManager()
@@ -117,7 +123,7 @@ void FMazeOutlineAssetEditor::PostRedo(bool Success)
 
 TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayout()
 {
-	return FTabManager::NewLayout("Maze_Outline_Editor_v2_1")
+	return FTabManager::NewLayout("Maze_Outline_Editor_v2_2")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
@@ -141,7 +147,7 @@ TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayou
 				(
 					FTabManager::NewStack()
 					->SetSizeCoefficient(0.33)
-					->AddTab(TEXT("FragmentDetailsTab"), ETabState::OpenedTab)
+					->AddTab(TEXT("FragmentSettingsTab"), ETabState::OpenedTab)
 				)
 			)
 		);
@@ -179,10 +185,20 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 
 	FWorkflowCentricApplication::InitAssetEditor(Mode, Host, GetToolkitFName(), GenerateInterfaceLayout(), true, true, Object);
 
+	// Initialize tabs
+
+	PreviewSettingsDetailsView->SetStructureData(MakeShareable(new FStructOnScope(FMazeOutlinePreviewSettings::StaticStruct(), (uint8*)&CurrentOutline->PreviewSettings)));
+	OutlineSettingsDetailsView->SetStructureData(MakeShareable(new FStructOnScope(UMazeOutline::StaticClass(), (uint8*)&CurrentOutline)));
+
 	HandleAssetChanged(FPropertyChangedEvent(nullptr));
 }
 
 void FMazeOutlineAssetEditor::HandleAssetChanged(const FPropertyChangedEvent& Event)
+{
+	UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineAssetEditor::HandleAssetChanged] Not implemented"));
+}
+
+void FMazeOutlineAssetEditor::HandlePreviewSettingChanged(const FPropertyChangedEvent& Event)
 {
 	UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineAssetEditor::HandleAssetChanged] Not implemented"));
 }
@@ -195,26 +211,22 @@ void FMazeOutlineAssetEditor::ResertEditorInterfaceState()
 TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_Viewport(const FSpawnTabArgs& InArgs)
 {
 	TSharedRef<SDockTab> Output = SNew(SDockTab)
-		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
+		.Label(FText::FromString(TEXT("Preview Viewport")))
 		.TabColorScale(GetWorldCentricTabColorScale());
 
-	AssetEditorViewportFactoryFunction ViewportFactoryFunction = [&](const FAssetEditorViewportConstructionArgs& InArgs) -> TSharedRef<SAssetEditorViewport>
+	AssetEditorViewportFactoryFunction ViewportFactoryFunction = [&](const FAssetEditorViewportConstructionArgs& ViewportArgs) -> TSharedRef<SAssetEditorViewport>
 	{
-		return SNew(SAssetEditorViewport);
+		return SNew(SAssetEditorViewport, ViewportArgs);
 	};
 
 	PreviewTabContent = MakeShareable(new FEditorViewportTabContent());
-	PreviewTabContent->Initialize(ViewportFactoryFunction, Output, TEXT("MOED_Viewport"));
+	PreviewTabContent->Initialize(ViewportFactoryFunction, Output, TEXT("MOED_PreviewViewport"));
 
 	return Output;
 }
 
 TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_PreviewSettings(const FSpawnTabArgs& InArgs)
 {
-	TSharedRef<SDockTab> Output = SNew(SDockTab)
-		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
-		.TabColorScale(GetWorldCentricTabColorScale());
-
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	FDetailsViewArgs DetailsViewArgs;
@@ -225,16 +237,21 @@ TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_PreviewSettings(const FSp
 	FStructureDetailsViewArgs StructureViewArgs;
 
 	PreviewSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
+	PreviewSettingsDetailsView->GetOnFinishedChangingPropertiesDelegate().AddLambda([&](const FPropertyChangedEvent& Event)
+		{
+			UE_LOG(LogTemp, Display, TEXT("Preview setting %s changed"), *Event.GetPropertyName().ToString());
+		});
 
-	return Output;
+	return SNew(SDockTab)
+		.Label(FText::FromString(TEXT("Preview Settings")))
+		.TabColorScale(GetWorldCentricTabColorScale())
+		[
+			PreviewSettingsDetailsView->GetWidget().ToSharedRef()
+		];;
 }
 
 TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_OutlineSettings(const FSpawnTabArgs& InArgs)
 {
-	TSharedRef<SDockTab> Output = SNew(SDockTab)
-		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
-		.TabColorScale(GetWorldCentricTabColorScale());
-
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	FDetailsViewArgs DetailsViewArgs;
@@ -245,16 +262,21 @@ TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_OutlineSettings(const FSp
 	FStructureDetailsViewArgs StructureViewArgs;
 
 	OutlineSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
+	PreviewSettingsDetailsView->GetOnFinishedChangingPropertiesDelegate().AddLambda([&](const FPropertyChangedEvent& Event)
+		{
+			UE_LOG(LogTemp, Display, TEXT("Outline setting %s changed"), *Event.GetPropertyName().ToString());
+		});
 
-	return Output;
+	return SNew(SDockTab)
+		.Label(FText::FromString(TEXT("Outline Settings")))
+		.TabColorScale(GetWorldCentricTabColorScale())
+		[
+			OutlineSettingsDetailsView->GetWidget().ToSharedRef()
+		];
 }
 
 TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_FragmentSettings(const FSpawnTabArgs& InArgs)
 {
-	TSharedRef<SDockTab> Output = SNew(SDockTab)
-		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
-		.TabColorScale(GetWorldCentricTabColorScale());
-
 	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
 
 	FDetailsViewArgs DetailsViewArgs;
@@ -266,7 +288,12 @@ TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_FragmentSettings(const FS
 
 	FragmentSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
 
-	return Output;
+	return SNew(SDockTab)
+		.Label(FText::FromString(TEXT("Fragment Settings")))
+		.TabColorScale(GetWorldCentricTabColorScale())
+		[
+			FragmentSettingsDetailsView->GetWidget().ToSharedRef()
+		];
 }
 
 bool FMazeOutlineAssetEditor::ValidateGraph()

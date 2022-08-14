@@ -54,7 +54,7 @@ public:
 	TArray<FMazeLocation> EndNodes;
 
 	/** Polygonal SubGraphs which will be used to generate the maze piece-wise with different algorithms. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadOnly)
 	TArray<FMazeFragmentOutline> Fragments;
 
 #if WITH_EDITORONLY_DATA

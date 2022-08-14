@@ -19,6 +19,7 @@ struct FMazeOutlineAssetEditor : public FWorkflowCentricApplication, public FSel
 public:
 
 	FMazeOutlineAssetEditor();
+	virtual ~FMazeOutlineAssetEditor();
 
 	//----- AssetEditorTookit overrides -----//
 public:
@@ -51,6 +52,7 @@ public:
 	TSharedRef<FTabManager::FLayout> GenerateInterfaceLayout();
 	void SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object);
 	void HandleAssetChanged(const FPropertyChangedEvent& Event);
+	void HandlePreviewSettingChanged(const FPropertyChangedEvent& Event);
 	void ResertEditorInterfaceState();
 
 	//----- Tab Spawners -----//
@@ -77,9 +79,9 @@ public:
 
 	FMazeGraph PreviewGraph;
 
-	TSharedRef<class FEditorViewportTabContent> PreviewTabContent;
+	TSharedPtr<class FEditorViewportTabContent> PreviewTabContent;
 
-	TSharedRef<class IStructureDetailsView> PreviewSettingsDetailsView;
-	TSharedRef<class IStructureDetailsView> OutlineSettingsDetailsView;
-	TSharedRef<class IStructureDetailsView> FragmentSettingsDetailsView;
+	TSharedPtr<class IStructureDetailsView> PreviewSettingsDetailsView{ nullptr };
+	TSharedPtr<class IStructureDetailsView> OutlineSettingsDetailsView{ nullptr };
+	TSharedPtr<class IStructureDetailsView> FragmentSettingsDetailsView{ nullptr };
 };
