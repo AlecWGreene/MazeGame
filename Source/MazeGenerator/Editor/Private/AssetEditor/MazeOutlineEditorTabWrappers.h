@@ -47,3 +47,9 @@ struct FStructDetailsTabWrapper : public FTabWrapperBase
 	TSharedPtr<IStructureDetailsView> DetailsView{ nullptr };
 	FDelegateHandle OnDataChangedHandle;
 };
+
+// WIP
+struct FMazePreviewTabWrapper : public FTabWrapperBase
+{
+	
+};

@@ -5,15 +5,20 @@
 #include "Framework/Docking/TabManager.h"
 #include "AssetEditorModeManager.h"
 #include "MazeOutlineEdMode.h"
+#include "SAssetEditorViewport.h"
+#include "AssetEditorViewportLayout.h"
+
+struct FMazeOutlineAssetEditorTabs
+{
+	static inline FName ViewportTabName = "DefaultViewportTab";
+	static inline FName PreviewSettingsTabName = "PreviewSettingsTab";
+	static inline FName OutlineSettingsTabName = "OutlineSettingsTab";
+	static inline FName FragmentSettingsTabName = "FragmentSettingsTab";
+};
 
 FMazeOutlineAssetEditor::FMazeOutlineAssetEditor()
 {
 	WorkspaceMenuName = TEXT("MOED");
-}
-
-FMazeOutlineAssetEditor::~FMazeOutlineAssetEditor()
-{
-	// Empty for now
 }
 
 void FMazeOutlineAssetEditor::CreateEditorModeManager()
@@ -31,14 +36,33 @@ void FMazeOutlineAssetEditor::RegisterTabSpawners(const TSharedRef<class FTabMan
 
 	FWorkflowCentricApplication::RegisterTabSpawners(InTabManager);
 
-	for (TSharedPtr<FTabWrapperBase> TabWrapper : TabCollection)
-	{
-		TabWrapper->TabColor = GetWorldCentricTabColorScale();
-		InTabManager->RegisterTabSpawner(*TabWrapper->UniqueName, 
-				FOnSpawnTab::CreateSP(TabWrapper.Get(), &FTabWrapperBase::HandleSpawn))
-			.SetDisplayName(FText::FromString(TabWrapper->DisplayName))
-			.SetGroup(WorkspaceMenuCategoryRef);
-	}
+	InTabManager->RegisterTabSpawner(FMazeOutlineAssetEditorTabs::ViewportTabName,
+			FOnSpawnTab::CreateSP(this, &FMazeOutlineAssetEditor::SpawnTab_Viewport))
+		.SetDisplayName(FText::FromString(TEXT("Preview")))
+		.SetGroup(WorkspaceMenuCategoryRef);
+
+	InTabManager->RegisterTabSpawner(FMazeOutlineAssetEditorTabs::PreviewSettingsTabName,
+			FOnSpawnTab::CreateSP(this, &FMazeOutlineAssetEditor::SpawnTab_PreviewSettings))
+		.SetDisplayName(FText::FromString(TEXT("Preview Settings")))
+		.SetGroup(WorkspaceMenuCategoryRef);
+
+	InTabManager->RegisterTabSpawner(FMazeOutlineAssetEditorTabs::OutlineSettingsTabName,
+			FOnSpawnTab::CreateSP(this, &FMazeOutlineAssetEditor::SpawnTab_OutlineSettings))
+		.SetDisplayName(FText::FromString(TEXT("Outline Settings")))
+		.SetGroup(WorkspaceMenuCategoryRef);
+
+	InTabManager->RegisterTabSpawner(FMazeOutlineAssetEditorTabs::FragmentSettingsTabName,
+			FOnSpawnTab::CreateSP(this, &FMazeOutlineAssetEditor::SpawnTab_FragmentSettings))
+		.SetDisplayName(FText::FromString(TEXT("Fragment Settings")))
+		.SetGroup(WorkspaceMenuCategoryRef);
+}
+
+void FMazeOutlineAssetEditor::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
+{
+	InTabManager->UnregisterTabSpawner(FMazeOutlineAssetEditorTabs::ViewportTabName);
+	InTabManager->UnregisterTabSpawner(FMazeOutlineAssetEditorTabs::PreviewSettingsTabName);
+	InTabManager->UnregisterTabSpawner(FMazeOutlineAssetEditorTabs::OutlineSettingsTabName);
+	InTabManager->UnregisterTabSpawner(FMazeOutlineAssetEditorTabs::FragmentSettingsTabName);
 }
 
 void FMazeOutlineAssetEditor::PostRegenerateMenusAndToolbars()
@@ -93,14 +117,14 @@ void FMazeOutlineAssetEditor::PostRedo(bool Success)
 
 TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayout()
 {
-	return FTabManager::NewLayout("Maze_Outline_Editor_v1_3")
+	return FTabManager::NewLayout("Maze_Outline_Editor_v2_1")
 		->AddArea
 		(
 			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
 			->Split
 			(
 				FTabManager::NewStack()
-				->AddTab(*DefaultViewportTab->UniqueName, ETabState::OpenedTab)
+				->AddTab(TEXT("DefaultViewportTab"), ETabState::OpenedTab)
 			)
 			->Split
 			(
@@ -110,57 +134,17 @@ TSharedRef<FTabManager::FLayout> FMazeOutlineAssetEditor::GenerateInterfaceLayou
 				(
 					FTabManager::NewStack()
 					->SetSizeCoefficient(0.66)
-					->AddTab(*PreviewSettingsTab->UniqueName, ETabState::OpenedTab)
-					->AddTab(*OutlineSettingsTab->UniqueName, ETabState::OpenedTab)
+					->AddTab(TEXT("PreviewSettingsTab"), ETabState::OpenedTab)
+					->AddTab(TEXT("OutlineSettingsTab"), ETabState::OpenedTab)
 				)
 				->Split
 				(
 					FTabManager::NewStack()
 					->SetSizeCoefficient(0.33)
-					->AddTab(*FragmentDetailsTab->UniqueName, ETabState::OpenedTab)
+					->AddTab(TEXT("FragmentDetailsTab"), ETabState::OpenedTab)
 				)
 			)
 		);
-}
-
-void FMazeOutlineAssetEditor::SetupTabs(UMazeOutline* Object)
-{
-	DefaultViewportTab = MakeShared<FTabWrapperBase>();
-
-	PreviewSettingsTab = MakeShared<FPreviewSettingsTabWrapper>();
-	OutlineSettingsTab = MakeShared<FOutlineSettingsTabWrapper>();
-
-	FragmentDetailsTab = MakeShared<FStructDetailsTabWrapper>();
-	FragmentDetailsTab->DisplayName = TEXT("Fragment Details");
-
-	// Store all tabs in a container so other systems can know what tabs to add
-	TabCollection = { 
-		DefaultViewportTab, 
-		PreviewSettingsTab, 
-		OutlineSettingsTab,  
-		FragmentDetailsTab 
-	};
-
-	// Ensure all tabs have unique names
-	TMap<FString, TArray<TSharedPtr<FTabWrapperBase>>> TabsByName;
-	for (TSharedPtr<FTabWrapperBase> Tab : TabCollection)
-	{
-		if (!Tab.IsValid())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineAssetEditor::SetupTabs] Null tab found in tab collection"))
-			continue;
-		}
-
-		// Add numerals to unique name when repeated
-		if (TabsByName.Contains(Tab->UniqueName))
-		{
-			Tab->UniqueName += FString::FromInt(TabsByName[Tab->UniqueName].Num());
-		}
-		else
-		{
-			TabsByName.Add(Tab->UniqueName, TArray<TSharedPtr<FTabWrapperBase>>{ Tab });
-		}
-	}
 }
 
 void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object)
@@ -190,8 +174,6 @@ void FMazeOutlineAssetEditor::SetupEditor(const EToolkitMode::Type Mode, const T
 	EdMode = MakeShareable(GetEditorModeManager().GetActiveModeTyped<FMazeOutlineEdMode>(EditorModeId));
 	EdMode->Editor = SharedThis(this);
 
-	SetupTabs(Object);
-
 	PreviewGraph = FMazeGraph(5,6);
 	ValidateGraph();
 
@@ -208,6 +190,83 @@ void FMazeOutlineAssetEditor::HandleAssetChanged(const FPropertyChangedEvent& Ev
 void FMazeOutlineAssetEditor::ResertEditorInterfaceState()
 {
 	UE_LOG(LogTemp, Warning, TEXT("[FMazeOutlineAssetEditor::ResertEditorInterfaceState] Not implemented"));
+}
+
+TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_Viewport(const FSpawnTabArgs& InArgs)
+{
+	TSharedRef<SDockTab> Output = SNew(SDockTab)
+		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
+		.TabColorScale(GetWorldCentricTabColorScale());
+
+	AssetEditorViewportFactoryFunction ViewportFactoryFunction = [&](const FAssetEditorViewportConstructionArgs& InArgs) -> TSharedRef<SAssetEditorViewport>
+	{
+		return SNew(SAssetEditorViewport);
+	};
+
+	PreviewTabContent = MakeShareable(new FEditorViewportTabContent());
+	PreviewTabContent->Initialize(ViewportFactoryFunction, Output, TEXT("MOED_Viewport"));
+
+	return Output;
+}
+
+TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_PreviewSettings(const FSpawnTabArgs& InArgs)
+{
+	TSharedRef<SDockTab> Output = SNew(SDockTab)
+		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
+		.TabColorScale(GetWorldCentricTabColorScale());
+
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.bShowAnimatedPropertiesOption = false;
+	DetailsViewArgs.bShowKeyablePropertiesOption = false;
+
+	FStructureDetailsViewArgs StructureViewArgs;
+
+	PreviewSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
+
+	return Output;
+}
+
+TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_OutlineSettings(const FSpawnTabArgs& InArgs)
+{
+	TSharedRef<SDockTab> Output = SNew(SDockTab)
+		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
+		.TabColorScale(GetWorldCentricTabColorScale());
+
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.bShowAnimatedPropertiesOption = false;
+	DetailsViewArgs.bShowKeyablePropertiesOption = false;
+
+	FStructureDetailsViewArgs StructureViewArgs;
+
+	OutlineSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
+
+	return Output;
+}
+
+TSharedRef<SDockTab> FMazeOutlineAssetEditor::SpawnTab_FragmentSettings(const FSpawnTabArgs& InArgs)
+{
+	TSharedRef<SDockTab> Output = SNew(SDockTab)
+		.Label(FText::FromString(TEXT("WHAT GOES HERE")))
+		.TabColorScale(GetWorldCentricTabColorScale());
+
+	FPropertyEditorModule& PropertyEditorModule = FModuleManager::GetModuleChecked<FPropertyEditorModule>("PropertyEditor");
+
+	FDetailsViewArgs DetailsViewArgs;
+	DetailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
+	DetailsViewArgs.bShowAnimatedPropertiesOption = false;
+	DetailsViewArgs.bShowKeyablePropertiesOption = false;
+
+	FStructureDetailsViewArgs StructureViewArgs;
+
+	FragmentSettingsDetailsView = PropertyEditorModule.CreateStructureDetailView(DetailsViewArgs, StructureViewArgs, nullptr);
+
+	return Output;
 }
 
 bool FMazeOutlineAssetEditor::ValidateGraph()

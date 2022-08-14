@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "EditorViewportTabContent.h"
 
 #include "MazeOutline.h"
 #include "TabWrapperBase.h"
@@ -18,13 +19,13 @@ struct FMazeOutlineAssetEditor : public FWorkflowCentricApplication, public FSel
 public:
 
 	FMazeOutlineAssetEditor();
-	~FMazeOutlineAssetEditor();
 
 	//----- AssetEditorTookit overrides -----//
 public:
 
 	virtual void CreateEditorModeManager() override;
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
+	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager) override;
 	virtual void PostRegenerateMenusAndToolbars() override;
 
 	//----- IToolKit overrides -----//
@@ -48,10 +49,17 @@ public:
 public:
 
 	TSharedRef<FTabManager::FLayout> GenerateInterfaceLayout();
-	void SetupTabs(UMazeOutline* Object);
 	void SetupEditor(const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& Host, UMazeOutline* Object);
 	void HandleAssetChanged(const FPropertyChangedEvent& Event);
 	void ResertEditorInterfaceState();
+
+	//----- Tab Spawners -----//
+public:
+
+	TSharedRef<SDockTab> SpawnTab_Viewport(const FSpawnTabArgs& InArgs);
+	TSharedRef<SDockTab> SpawnTab_PreviewSettings(const FSpawnTabArgs& InArgs);
+	TSharedRef<SDockTab> SpawnTab_OutlineSettings(const FSpawnTabArgs& InArgs);
+	TSharedRef<SDockTab> SpawnTab_FragmentSettings(const FSpawnTabArgs& InArgs);
 
 	//----- Utility Methods -----//
 public:
@@ -67,17 +75,11 @@ public:
 
 	TWeakObjectPtr<UMazeOutline> CurrentOutline;
 
-	TArray<TSharedPtr<FTabWrapperBase>> TabCollection;
-
 	FMazeGraph PreviewGraph;
 
-	//----- Default Tab Wrappers -----//
-public:
+	TSharedRef<class FEditorViewportTabContent> PreviewTabContent;
 
-	TSharedPtr<FTabWrapperBase> DefaultViewportTab;
-	
-	TSharedPtr<FPreviewSettingsTabWrapper> PreviewSettingsTab;
-	TSharedPtr<FOutlineSettingsTabWrapper> OutlineSettingsTab;
-	
-	TSharedPtr<FStructDetailsTabWrapper> FragmentDetailsTab;
+	TSharedRef<class IStructureDetailsView> PreviewSettingsDetailsView;
+	TSharedRef<class IStructureDetailsView> OutlineSettingsDetailsView;
+	TSharedRef<class IStructureDetailsView> FragmentSettingsDetailsView;
 };

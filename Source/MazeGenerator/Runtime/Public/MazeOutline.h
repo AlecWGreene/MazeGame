@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 
 #include "MazeGeneratorTypes.h"
+#include "MazeOutlinePreviewSettings.h"
 
 #include "MazeOutline.generated.h"
 
@@ -55,4 +56,9 @@ public:
 	/** Polygonal SubGraphs which will be used to generate the maze piece-wise with different algorithms. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite)
 	TArray<FMazeFragmentOutline> Fragments;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY()
+	FMazeOutlinePreviewSettings PreviewSettings;
+#endif
 };
